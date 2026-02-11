@@ -2,15 +2,22 @@ import streamlit as st
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import io
 import zipfile
+import tiktoken
 
 # --- HARDCODED SETTINGS ---
 CHUNK_SIZE = 32000
 CHUNK_OVERLAP = 200
 
-st.set_page_config(page_title="Text Splitter (32k)", layout="wide")
+# Setup token counting
+enc = tiktoken.get_encoding("cl100k_base")
+
+def length_function(text: str) -> int:
+    return len(enc.encode(text))
+
+st.set_page_config(page_title="Text Splitter (32k Tokens)", layout="wide")
 
 st.title("Text Splitter Explorer")
-st.caption(f"Settings: Chunk Size {CHUNK_SIZE}, Overlap {CHUNK_OVERLAP}")
+st.caption(f"Settings: Chunk Size {CHUNK_SIZE} Tokens, Overlap {CHUNK_OVERLAP} Tokens")
 
 # Initialize session state to store splits so they don't disappear on click
 if "splits" not in st.session_state:
@@ -26,10 +33,11 @@ text_input = st.text_area(
 # 2. Split Text Button
 if st.button("Split Text", type="primary"):
     if text_input:
+        # Initializing splitter with token length function
         splitter = RecursiveCharacterTextSplitter(
             chunk_size=CHUNK_SIZE,
             chunk_overlap=CHUNK_OVERLAP,
-            length_function=len,
+            length_function=length_function,
         )
         st.session_state.splits = splitter.split_text(text_input)
     else:
